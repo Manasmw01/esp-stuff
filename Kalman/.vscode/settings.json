@@ -1,6 +1,0 @@
-{
-    "cmake.sourceDirectory": "C:/Users/91885/Desktop/ESP/Kalman/OpenKF/cpp/Examples/kf_state_estimation",
-    "files.associations": {
-        "lu": "cpp"
-    }
-}
