@@ -24,6 +24,7 @@ void gauss_inverse(double* A, double* A_inv, int n);
 void matrix_subtract(double* A, double* B, double* C, int n);
 void print_matrix(double* matrix, int rows, int cols);
 void print_vector(double* vector, int size);
+
     double x[STATE_SIZE];
     double P[STATE_SIZE * STATE_SIZE];
     double A_transpose[STATE_SIZE * STATE_SIZE];
@@ -40,24 +41,23 @@ void print_vector(double* vector, int size);
 void kalman_filter(double* initial, double* P_flat, double* A, double* Q, double* R, double* H, 
                    double* measurements, double* real_out, double* prediction, int iter) {
 
+    // printf("Iter: %d\n", iter);
+    // printf("\n\nx_starts(%d)\n", iter);
+    // print_vector(x, STATE_SIZE); // 
+
+
 
     // Load initial state and covariance matrix
     for (int i = 0; i < STATE_SIZE; i++) {
         // x[i] = initial[i];
         for (int j = 0; j < STATE_SIZE; j++) {
-            // P[i * STATE_SIZE + j] = P_flat[(STATE_SIZE*STATE_SIZE*iter) + i * STATE_SIZE + j];
+            // P[i * STATE_SIZE + j] = P_flat[(iter*STATE_SIZE*STATE_SIZE) + i * STATE_SIZE + j];
             P[i * STATE_SIZE + j] = P_flat[i * STATE_SIZE + j];
             I[i * STATE_SIZE + j] = (i == j) ? 1.0 : 0.0;
         }
     }
-    printf("\n");
-
-
-    // printf("P2\n");
-    // print_matrix(P_flat, STATE_SIZE, STATE_SIZE);
-
-    printf("\n\nx2(%d)\n", iter);
-    print_vector(x, STATE_SIZE); // 
+    printf("\n\nP_starts(%d)\n", iter);
+    print_matrix(P_flat, STATE_SIZE, STATE_SIZE);
 
     matrix_transpose(A, A_transpose, STATE_SIZE, STATE_SIZE); // A^T
 
@@ -69,19 +69,22 @@ void kalman_filter(double* initial, double* P_flat, double* A, double* Q, double
 
     // xp = A * x
     double xp[STATE_SIZE];
-    matrix_multiply(A, x, xp, STATE_SIZE,   STATE_SIZE, 1); // xp = A*x2
+    matrix_multiply(A, x, xp, STATE_SIZE, STATE_SIZE, 1); // xp = A*x2
 
     // printf("intermediate state vector\n");
     // print_vector(xp, STATE_SIZE);
 
     // Pp = A * P * A_transpose
     matrix_multiply(A, P, Pp, STATE_SIZE, STATE_SIZE, STATE_SIZE); // Pp = A * P2
-
     matrix_multiply(Pp, A_transpose, Pp, STATE_SIZE, STATE_SIZE, STATE_SIZE); // Pp = (A * P2) * A^T
+    // printf("Pp\n");
+    // print_matrix(Pp, STATE_SIZE, STATE_SIZE);
 
     // Add process noise covariance Q
     matrix_add(Pp, W, Pp, STATE_SIZE, STATE_SIZE); // Pp = (A * P2) * A^T + Q
-    // printf("\n\nPp final\n");
+
+    // Print intermediate covariance matrix with process noise
+    // printf("Pp\n");
     // print_matrix(Pp, STATE_SIZE, STATE_SIZE);
 
     // Compute H_transpose
@@ -128,8 +131,8 @@ void kalman_filter(double* initial, double* P_flat, double* A, double* Q, double
     matrix_multiply(Pp, H_transpose, K, STATE_SIZE, STATE_SIZE, MEAS_SIZE); // Pp * H^T
     matrix_multiply(K, HPHT_inv, K, STATE_SIZE, MEAS_SIZE, MEAS_SIZE); // K = Pp * H^T * inv((H * Pp) * H^T + R)
 
-    // printf("K\n");
-    // print_matrix(K, STATE_SIZE, MEAS_SIZE);
+    printf("Kalman Gain(%d)\n");
+    print_matrix(K, STATE_SIZE, MEAS_SIZE);
 
     // Compute z3 - H * xp
     double z3_minus_H_xp[MEAS_SIZE];
@@ -146,24 +149,27 @@ void kalman_filter(double* initial, double* P_flat, double* A, double* Q, double
     matrix_multiply(K, z3_minus_H_xp, prediction, STATE_SIZE, MEAS_SIZE, 1); // K * (z3 - H * xp)
     for (int i = 0; i < STATE_SIZE; i++) {
         prediction[i] = xp[i] + prediction[i]; // x3 = xp + K * (z3 - H * xp)
+    }
+    for (int i = 0; i < STATE_SIZE; i++) 
+    {
         x[i] = prediction[i];
     }
+    // printf("\n\nx_ends(%d)\n", iter);
+    // print_vector(x, STATE_SIZE); // 
+
+
 
     // Print updated state vector
     // printf("\n\nupdated state vector(2nd measurement in the prediction_array_hc.h file): ");
-    // printf("x3\n");
     // print_vector(prediction, STATE_SIZE); // 
 
     // Compute P3 = Pp - K * H * Pp
     matrix_multiply(K, H, KtH, STATE_SIZE, MEAS_SIZE, STATE_SIZE);  // K * H
     matrix_multiply(KtH, Pp, KtHP, STATE_SIZE, STATE_SIZE, STATE_SIZE); // K * H * Pp
-    // printf("\n\nPp\n");
-    // print_matrix(Pp, STATE_SIZE, STATE_SIZE);
-    // printf("KtHP\n");
-    // print_matrix(KtHP, STATE_SIZE, STATE_SIZE);
-    matrix_subtract(Pp, KtHP, temp1, STATE_SIZE*STATE_SIZE); // P3 = Pp - (K * H * Pp)
+    matrix_subtract(Pp, KtHP, temp1, STATE_SIZE); // P3 = Pp - (K * H * Pp)
 
-    // printf("P3\n");
+    // Print updated covariance matrix
+    // printf("updated covariance matrix\n");
     // print_matrix(temp1, STATE_SIZE, STATE_SIZE);
 
     // Update the covariance matrix
@@ -172,6 +178,12 @@ void kalman_filter(double* initial, double* P_flat, double* A, double* Q, double
             P_flat[i * STATE_SIZE + j] = temp1[i * STATE_SIZE + j];
         }
     }
+    printf("\n\nP_ends(%d)\n", iter);
+    print_matrix(P_flat, STATE_SIZE, STATE_SIZE);
+    // printf("P_flat ends(%d)\n", iter);
+    // print_matrix(P_flat, STATE_SIZE, STATE_SIZE);
+
+
 }
 
 // Utility function implementations
@@ -366,6 +378,7 @@ int main() {
     {
     kalman_filter(initial, P_flat, A, Q, R, H, measurements, real_out, prediction, iter);
     }
+
 
     return 0;
 }
