@@ -46,6 +46,7 @@ void kalman_filter(double* initial, double* P_flat, double* A, double* Q, double
         // x[i] = initial[i];
         for (int j = 0; j < STATE_SIZE; j++) {
             // P[i * STATE_SIZE + j] = P_flat[(STATE_SIZE*STATE_SIZE*iter) + i * STATE_SIZE + j];
+            // P[i * STATE_SIZE + j] = P_flat[i * STATE_SIZE + j];
             P[i * STATE_SIZE + j] = P_flat[i * STATE_SIZE + j];
             I[i * STATE_SIZE + j] = (i == j) ? 1.0 : 0.0;
         }
@@ -53,11 +54,11 @@ void kalman_filter(double* initial, double* P_flat, double* A, double* Q, double
     printf("\n");
 
 
-    // printf("P2\n");
-    // print_matrix(P_flat, STATE_SIZE, STATE_SIZE);
+    printf("P2\n");
+    print_matrix(P, STATE_SIZE, STATE_SIZE);
 
-    printf("\n\nx2(%d)\n", iter);
-    print_vector(x, STATE_SIZE); // 
+    // printf("\n\nx2(%d)\n", iter);
+    // print_vector(x, STATE_SIZE); // 
 
     matrix_transpose(A, A_transpose, STATE_SIZE, STATE_SIZE); // A^T
 
@@ -151,7 +152,8 @@ void kalman_filter(double* initial, double* P_flat, double* A, double* Q, double
 
     // Print updated state vector
     // printf("\n\nupdated state vector(2nd measurement in the prediction_array_hc.h file): ");
-    // printf("x3\n");
+
+    // printf("\n\nx3(%d)\n", iter);
     // print_vector(prediction, STATE_SIZE); // 
 
     // Compute P3 = Pp - K * H * Pp
@@ -357,9 +359,12 @@ void print_vector(double* vector, int size) {
 
 int main() {
     double R[MEAS_SIZE * MEAS_SIZE];
-    for (int i = 0; i < STATE_SIZE; i++) 
-    {
+    for (int i = 0; i < STATE_SIZE; i++) {
         x[i] = initial[i];
+        for (int j = 0; j < STATE_SIZE; j++) {
+            P_flat[i * STATE_SIZE + j] = 0;
+            // I[i * STATE_SIZE + j] = (i == j) ? 1.0 : 0.0;
+        }
     }
 
     for (int iter = 0; iter < SAMPLES; iter++) 
