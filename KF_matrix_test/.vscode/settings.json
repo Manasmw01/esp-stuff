@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "real_array_hc.h": "c",
+        "h_array_hc.h": "c",
+        "w_array_hc.h": "c"
+    }
+}
