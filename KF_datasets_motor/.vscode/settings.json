@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "real_array_hc.h": "c"
+        "real_array_hc.h": "c",
+        "p_array.h": "c",
+        "dense": "cpp"
     }
 }

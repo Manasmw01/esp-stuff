@@ -12,7 +12,7 @@ HC dimensions: 6 states, 46 neurons
 
 Motor number of time samples: 3793
 Soma number of time samples: 9199
-   HC number of time samples: 4176
+HC number of time samples: 4176
 
 Notes:
 ======
