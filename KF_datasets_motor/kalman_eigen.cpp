@@ -11,7 +11,7 @@ using namespace Eigen;
 // Define constants
 const int states = 6;
 const int neurons = 164;
-int total_time_stamps = 5;
+int total_time_stamps = 2;
 // Function to print Eigen vector or matrix
 template<typename Derived>
 void printMatrix(const Eigen::MatrixBase<Derived>& mat) {
@@ -81,25 +81,33 @@ int main() {
     VectorXf vec_X = Map<VectorXf>(initial, states);
     bci_kalman_filter.Vec_X() = vec_X;
 
+    // std::cout << vec_X << std::endl;
+
+
     // Zero initialization for matrix P
     bci_kalman_filter.Mat_P() = Matrix<float, states, states>::Zero();
+    // std::cout << bci_kalman_filter.Mat_P() << std::endl;
 
     // Map matrices from flat arrays (row-major)
     extern float A[];  
     Matrix<float, states, states> mat_F = Map<Matrix<float, states, states, RowMajor>>(A);
     bci_kalman_filter.Mat_F() = mat_F;
+    // std::cout << bci_kalman_filter.Mat_F() << std::endl;
 
     extern float W[];  
     Matrix<float, states, states> mat_Q = Map<Matrix<float, states, states, RowMajor>>(W);
     bci_kalman_filter.Mat_Q() = mat_Q;
+    // std::cout << bci_kalman_filter.Mat_Q() << std::endl;
 
     extern float Q[];  
     Matrix<float, neurons, neurons> mat_R = Map<Matrix<float, neurons, neurons, RowMajor>>(Q);
     bci_kalman_filter.Mat_R() = mat_R;
+    // std::cout << bci_kalman_filter.Mat_R() << std::endl;
 
     extern float H[];  
     Matrix<float, neurons, states> mat_H = Map<Matrix<float, neurons, states, RowMajor>>(H);
     bci_kalman_filter.Mat_H() = mat_H;
+    // std::cout << bci_kalman_filter.Mat_H() << std::endl;
 
     // Optionally print the matrices to verify
     // printMatrix(bci_kalman_filter.Vec_X());
@@ -115,10 +123,10 @@ int main() {
     {
         vec_Z(i-neurons*j) = measurements[i];    
     }
-    
+    std::cout << vec_Z << std::endl;
     bci_kalman_filter.predict_and_correct(vec_Z);
-    std::cout << bci_kalman_filter.Vec_X() << std::endl;
-    std::cout << std::endl;
+    // std::cout << bci_kalman_filter.Vec_X() << std::endl;
+    // std::cout << std::endl;
 
         // printMatrix(vec_Z);
   }
