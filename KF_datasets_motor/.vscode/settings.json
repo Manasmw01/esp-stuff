@@ -2,6 +2,7 @@
     "files.associations": {
         "real_array_hc.h": "c",
         "p_array.h": "c",
-        "dense": "cpp"
+        "dense": "cpp",
+        "prediction_array.h": "c"
     }
 }

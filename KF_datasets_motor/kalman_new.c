@@ -14,7 +14,7 @@
 
 #define STATE_SIZE 6  // Number of states n
 #define MEAS_SIZE 164  // Number of measurements m
-#define SAMPLES 3793  // Number of measurements m
+#define SAMPLES 100  // Number of measurements m
 #define ERROR_THRESHOLD 0.02
 int tot_errors = 0;
 void matrix_multiply(float* A, float* B, float* C, int n, int m, int p);
@@ -43,7 +43,7 @@ void print_vector(float* vector, int size);
 
     float x[STATE_SIZE];
     float prediction_x[STATE_SIZE];
-    float temp_var[STATE_SIZE];
+    float prediction_ref[STATE_SIZE];
     float temp_meas[MEAS_SIZE];
     float P[STATE_SIZE * STATE_SIZE];
     float A_transpose[STATE_SIZE * STATE_SIZE];
@@ -506,16 +506,18 @@ int main() {
         // kalman_filter(initial, P_flat, A, Q, R, H, measurements, real_out, prediction, iter, xp);
         kalman_filter_new(vec_X, Mat_P, Mat_F, Mat_Q, Mat_R, Mat_H, vec_Z);
 
-        // printf("vec_X vector:");
-        // print_vector(vec_X, STATE_SIZE);
+        printf("\nprediction vector:\t");
+        print_vector(vec_X, STATE_SIZE);
 
         for (int i = 0; i < STATE_SIZE; i++) 
         {
-            temp_var[i] = prediction[STATE_SIZE*(iter) + i];
+            prediction_ref[i] = prediction[STATE_SIZE*(iter) + i];
         }
+        printf("reference vector:\t");
+        print_vector(prediction_ref, STATE_SIZE);
         
         for (int i = 0; i < STATE_SIZE; i++)
-            diff_vec[i] = vec_X[i] - temp_var[i];
+            diff_vec[i] = vec_X[i] - prediction_ref[i];
         for (int i = 0; i < STATE_SIZE; i++) 
             abs_diff += fabs(diff_vec[i]);
 
@@ -524,7 +526,7 @@ int main() {
 
     }
     sum_sqr_vec = sum_sqr_vec/((STATE_SIZE-1)*STATE_SIZE);
-    printf("MSE: %f\n", sum_sqr_vec);
+    printf("MSE: %.20f\n", sum_sqr_vec);
 
     return 0;
 }
