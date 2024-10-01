@@ -1,6 +1,6 @@
 #include <iostream>
 #include "Eigen/Dense"
-
+#include <iomanip>
 typedef float data_type;
 //float MSE 3.82387e-12
 
@@ -149,14 +149,18 @@ int main() {
     for(int i = states*j; i < states*(j+1); i++)
     {
         vec_python(i-states*j) = prediction[i];    
-        std::cout << vec_python(i-states*j) << "\t";
+        // std::cout << vec_python(i-states*j) << "\t";
+        std::cout << std::fixed << std::setprecision(15) << vec_python(i - states * j) << "\t";
+        std::cout << std::defaultfloat;
     }
     std::cout << std::endl;
 
     std::cout << "Prediction: ";
     for(int i = 0; i < states; i++)
     {
-        std::cout << Vec_X_Final[i] << "\t";
+        // std::cout << Vec_X_Final[i] << "\t";
+        std::cout << std::fixed << std::setprecision(15) << Vec_X_Final[i] << "\t";
+        std::cout << std::defaultfloat;
     }
     std::cout << std::endl;
 
