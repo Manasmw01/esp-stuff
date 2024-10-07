@@ -287,8 +287,10 @@ void print_vector(data_type* vector, int size) {
 int main() {
     data_type R[MEAS_SIZE * MEAS_SIZE];
 
-    for (int i = 0; i < STATE_SIZE; i++) {
-        for (int j = 0; j < STATE_SIZE; j++) {
+    for (int i = 0; i < STATE_SIZE; i++) 
+    {
+        for (int j = 0; j < STATE_SIZE; j++) 
+        {
             Mat_I[i * STATE_SIZE + j] = (i == j) ? 1.0 : 0.0;
         }
     }
@@ -357,16 +359,16 @@ int main() {
         // kalman_filter(initial, P_flat, A, Q, R, H, measurements, real_out, prediction, iter, xp);
         kalman_filter_new(vec_X, Mat_P, Mat_F, Mat_Q, Mat_R, Mat_H, vec_Z);
 
-        printf("\nprediction vector:\t");
-        print_vector(vec_X, STATE_SIZE);
 
         for (int i = 0; i < STATE_SIZE; i++) 
         {
             prediction_ref[i] = prediction[STATE_SIZE*(iter) + i];
         }
-        printf("reference vector:\t");
+        printf("\nreference(%d):", iter);
         print_vector(prediction_ref, STATE_SIZE);
         
+        printf("prediction(%d):", iter);
+        print_vector(vec_X, STATE_SIZE);
         for (int i = 0; i < STATE_SIZE; i++)
             diff_vec[i] = vec_X[i] - prediction_ref[i];
         for (int i = 0; i < STATE_SIZE; i++) 

@@ -145,7 +145,7 @@ int main() {
     Vector<data_type, states> vec_python;
     Vector<data_type, states> Vec_X_Final;
     Vec_X_Final = bci_kalman_filter.Vec_X();
-    std::cout << "Reference: ";
+    std::cout << "\nReference(" << j << "):";
     for(int i = states*j; i < states*(j+1); i++)
     {
         vec_python(i-states*j) = prediction[i];    
@@ -155,7 +155,7 @@ int main() {
     }
     std::cout << std::endl;
 
-    std::cout << "Prediction: ";
+    std::cout << "Prediction(" << j << "):";
     for(int i = 0; i < states; i++)
     {
         // std::cout << Vec_X_Final[i] << "\t";
