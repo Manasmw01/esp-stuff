@@ -24,6 +24,7 @@ void matrix_transpose(data_type* A, data_type* AT, int n, int m);
 
 void LU_inverse(data_type* A, data_type* A_inv, int n);
 void gauss_inverse(data_type* A, data_type* A_inv, int n);
+void inverse_clean(float new_mat[MEAS_SIZE][MEAS_SIZE], float out[MEAS_SIZE][MEAS_SIZE]);
 void matrix_subtract(data_type* A, data_type* B, data_type* C, int n);
 void print_matrix(data_type* matrix, int rows, int cols);
 void print_vector(data_type* vector, int size);
@@ -64,6 +65,7 @@ void kalman_filter_new(data_type* vec_X, data_type* Mat_P, data_type* Mat_F, dat
 {
     data_type Y[MEAS_SIZE];
     data_type Mat_S[MEAS_SIZE*MEAS_SIZE];
+    data_type Mat_S_2D[MEAS_SIZE][MEAS_SIZE];
 
 
     data_type HtF[MEAS_SIZE * STATE_SIZE];
@@ -73,9 +75,6 @@ void kalman_filter_new(data_type* vec_X, data_type* Mat_P, data_type* Mat_F, dat
     matrix_multiply(HtF, vec_X, H_F_X, MEAS_SIZE,   STATE_SIZE, 1); // xp = A*x2
 
     matrix_subtract(vec_Z, H_F_X, Y, MEAS_SIZE); // P3 = Pp - (K * H * Pp)
-
-    // printf("Y\n");
-    // print_vector(Y, MEAS_SIZE);
 
     data_type F_Transpose[STATE_SIZE * STATE_SIZE];
     matrix_transpose(Mat_F, F_Transpose, STATE_SIZE, STATE_SIZE); // A^T
@@ -92,26 +91,39 @@ void kalman_filter_new(data_type* vec_X, data_type* Mat_P, data_type* Mat_F, dat
     data_type F_P_FT_Q[STATE_SIZE * STATE_SIZE];
     matrix_add(F_P_FT, Mat_Q, F_P_FT_Q, STATE_SIZE, STATE_SIZE); // Pp = (A * P2) * A^T + Q
 
-    // data_type Mat_H[MEAS_SIZE * STATE_SIZE];
-    // data_type F_P_FT_Q[STATE_SIZE * STATE_SIZE];
     data_type H_times_F_P_FT_Q[MEAS_SIZE * STATE_SIZE];
     matrix_multiply(Mat_H, F_P_FT_Q, H_times_F_P_FT_Q, MEAS_SIZE,   STATE_SIZE, STATE_SIZE); 
 
-    // data_type H_times_F_P_FT_Q[MEAS_SIZE * STATE_SIZE];
-    // data_type H_Transpose[STATE_SIZE * MEAS_SIZE];
     data_type H_times_F_P_FT_Q_times_HT[MEAS_SIZE * MEAS_SIZE];
     matrix_multiply(H_times_F_P_FT_Q, H_Transpose, H_times_F_P_FT_Q_times_HT, MEAS_SIZE,   STATE_SIZE, MEAS_SIZE); 
-    // printf("H_times_F_P_FT_Q_times_HT\n");
-    // print_matrix(H_times_F_P_FT_Q_times_HT, MEAS_SIZE, MEAS_SIZE);
-
-    // data_type H_times_F_P_FT_Q_times_HT[MEAS_SIZE * MEAS_SIZE];
-    // data_type Mat_R[MEAS_SIZE * MEAS_SIZE];
     matrix_add(H_times_F_P_FT_Q_times_HT, Mat_R, Mat_S, MEAS_SIZE, MEAS_SIZE); // Pp = (A * P2) * A^T + Q
-    // printf("Mat_S\n");
-    // print_matrix(Mat_S, MEAS_SIZE, MEAS_SIZE);
 
     data_type S_inv[MEAS_SIZE * MEAS_SIZE];
-    gauss_inverse(Mat_S, S_inv, MEAS_SIZE); 
+    data_type S_inv_2D[MEAS_SIZE][MEAS_SIZE]; // Replace data_type with the appropriate type (e.g., float)
+    // gauss_inverse(Mat_S, S_inv, MEAS_SIZE); 
+
+
+// INVERSE CLEAN IMPLEMENTATION STARTS
+    for (int i = 0; i < MEAS_SIZE; i++)  
+    {
+        for (int j = 0; j < MEAS_SIZE; j++) 
+        {
+            Mat_S_2D[i][j] = Mat_S[i * MEAS_SIZE + j]; // Accessing the 1D array using the row-major order formula
+        }
+    }
+    inverse_clean(Mat_S_2D, S_inv_2D);
+    for (int i = 0; i < MEAS_SIZE; i++)  
+    {
+        for (int j = 0; j < MEAS_SIZE; j++) 
+        {
+            S_inv[i * MEAS_SIZE + j] = S_inv_2D[i][j];  // Converting 2D element back to 1D
+        }
+    }
+// INVERSE CLEAN IMPLEMENTATION ENDS
+
+
+
+
     // LU_inverse(Mat_S, S_inv, MEAS_SIZE); 
 
     // data_type F_P_FT_Q[STATE_SIZE * STATE_SIZE];
@@ -465,4 +477,115 @@ int main() {
     // std::cout << "MSE is = \n" << sum_sqr_vec << std::endl;  
 
     return 0;
+}
+
+
+void inverse_clean(float new_mat[MEAS_SIZE][MEAS_SIZE], float out[MEAS_SIZE][MEAS_SIZE])
+{
+
+		 float ratio;
+		 int i,j,k;
+
+		 if(MEAS_SIZE == 2){
+			 float a = new_mat[0][0];
+			 float b = new_mat[0][1];
+			 float c = new_mat[1][0];
+			 float d = new_mat[1][1];
+
+			 float det = (a * d) - (b * c);
+
+			 if (det == 0) {
+			     printf("The matrix is not invertible.\n");
+			     return;
+			 }
+
+			 out[0][0] = d / det;
+			 out[0][1] = (-1) * b / det;
+			 out[1][0] = (-1) * c / det;
+			 out[1][1] = a / det;
+
+			 return;
+		 }
+
+		 /* Applying Gauss Jordan Elimination */
+		 for(i = 0; i < MEAS_SIZE; i++)
+		 {
+			  for(j = 0; j < MEAS_SIZE; j++)
+			  {
+				   if(i != j)
+				   {
+					    ratio = new_mat[j][i]/new_mat[i][i];
+					    for(k = 0; k < MEAS_SIZE; k++)
+					    {
+
+					    	if(i == MEAS_SIZE-1){
+					    		if(k == 0){//Calc the diagonal element first
+					    			new_mat[j][j] = new_mat[j][j] - ratio*new_mat[i][j];
+					    			//out[j][j] = (out[j][j] - ratio*out[i][j]) / new_mat[j][j];
+					    		}
+					    		else if(k == j){
+					    			new_mat[j][0] = new_mat[j][0] - ratio*new_mat[i][0];
+					    			//out[j][0] = (out[j][0] - ratio*out[i][0]) / new_mat[j][j];
+					    		}
+					    		else{
+					    			new_mat[j][k] = new_mat[j][k] - ratio*new_mat[i][k];
+					    			//out[j][k] = (out[j][k] - ratio*out[i][k]) / new_mat[j][j];
+					    		}
+
+					    		out[j][k] = (out[j][k] - ratio*out[i][k]) / new_mat[j][j];
+					    		//out[j][j] = out[j][j] / new_mat[j][j];
+					    	}
+					    	else{
+
+								new_mat[j][k] = new_mat[j][k] - ratio*new_mat[i][k];
+
+								if(i > 0)
+									out[j][k] = out[j][k] - ratio*out[i][k];
+								else{ //(i == 0)
+									if(i == k)
+										out[i][k] = 1;
+									else
+										out[i][k] = 0;
+									if(j == k){
+										if(i == k)
+											out[j][k] = 1 - ratio;
+										else
+											out[j][k] = 1;
+										//out[j][k] = 1 - ratio*out[i][k];
+									}
+									else{
+										if(i == k)
+											out[j][k] = 0 - ratio;
+										else
+											out[j][k] = 0;
+										//out[j][k] = 0 - ratio*out[i][k];
+									}
+								}
+					    	}
+
+					    }
+
+				   }
+//				   else{//(i == j)
+//					   out[i][j] = out[i][j] / new_mat[i][i];
+//				   }
+			  }
+		 }
+
+		 /* Row Operation to Make Principal Diagonal to 1 */
+		 for(i = 0; i < MEAS_SIZE; i++)
+		 {
+			 out[MEAS_SIZE-1][i] = out[MEAS_SIZE-1][i] / new_mat[MEAS_SIZE-1][MEAS_SIZE-1];
+		 }
+
+//		 /* Row Operation to Make Principal Diagonal to 1 */
+//		 for(i = 0; i < N; i++)
+//		 {
+//			  for(j = 0; j < N;j++)
+//			  {
+//			   	out[i][j] = out[i][j]/new_mat[i][i];
+//			  }
+//		 }
+
+		 return;
 }
