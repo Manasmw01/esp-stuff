@@ -22,6 +22,7 @@ void matrix_multiply(data_type* A, data_type* B, data_type* C, int n, int m, int
 void matrix_add(data_type* A, data_type* B, data_type* C, int n, int m);
 void matrix_transpose(data_type* A, data_type* AT, int n, int m);
 
+void LU_inverse(data_type* A, data_type* A_inv, int n);
 void gauss_inverse(data_type* A, data_type* A_inv, int n);
 void matrix_subtract(data_type* A, data_type* B, data_type* C, int n);
 void print_matrix(data_type* matrix, int rows, int cols);
@@ -111,6 +112,7 @@ void kalman_filter_new(data_type* vec_X, data_type* Mat_P, data_type* Mat_F, dat
 
     data_type S_inv[MEAS_SIZE * MEAS_SIZE];
     gauss_inverse(Mat_S, S_inv, MEAS_SIZE); 
+    // LU_inverse(Mat_S, S_inv, MEAS_SIZE); 
 
     // data_type F_P_FT_Q[STATE_SIZE * STATE_SIZE];
     // data_type H_Transpose[STATE_SIZE * MEAS_SIZE];
@@ -166,6 +168,84 @@ void kalman_filter_new(data_type* vec_X, data_type* Mat_P, data_type* Mat_F, dat
 
 // Function prototypes
 
+
+// Function to perform LU decomposition of matrix A
+void lu_decomposition(data_type* A, int* P, int n) {
+    for (int i = 0; i < n; i++) {
+        P[i] = i;  // Initialize pivot array
+    }
+
+    for (int i = 0; i < n; i++) {
+        // Partial pivoting
+        int maxRow = i;
+        for (int k = i + 1; k < n; k++) {
+            if (fabs(A[k * n + i]) > fabs(A[maxRow * n + i])) {
+                maxRow = k;
+            }
+        }
+
+        // Swap rows in the pivot array
+        if (maxRow != i) {
+            int temp = P[i];
+            P[i] = P[maxRow];
+            P[maxRow] = temp;
+        }
+
+        // Swap rows in matrix A
+        for (int k = 0; k < n; k++) {
+            data_type temp = A[i * n + k];
+            A[i * n + k] = A[P[i] * n + k];
+            A[P[i] * n + k] = temp;
+        }
+
+        // LU Decomposition
+        for (int j = i + 1; j < n; j++) {
+            A[j * n + i] /= A[i * n + i];
+            for (int k = i + 1; k < n; k++) {
+                A[j * n + k] -= A[j * n + i] * A[i * n + k];
+            }
+        }
+    }
+}
+
+// Function to perform forward and backward substitution to find the inverse
+void lu_invert(data_type* A, data_type* A_inv, int* P, int n) {
+    // Loop over each column for solving A * X = I
+    for (int j = 0; j < n; j++) {
+        // Initialize identity matrix column
+        data_type identity[n];
+        for (int i = 0; i < n; i++) 
+        {
+            identity[i] = 0;
+        }
+        identity[j] = 1.0f;
+
+        // Forward substitution (solve L * y = b)
+        data_type y[n];
+        for (int i = 0; i < n; i++) {
+            y[i] = identity[P[i]];
+            for (int k = 0; k < i; k++) {
+                y[i] -= A[i * n + k] * y[k];
+            }
+        }
+
+        // Backward substitution (solve U * x = y)
+        for (int i = n - 1; i >= 0; i--) {
+            A_inv[i * n + j] = y[i];
+            for (int k = i + 1; k < n; k++) {
+                A_inv[i * n + j] -= A[i * n + k] * A_inv[k * n + j];
+            }
+            A_inv[i * n + j] /= A[i * n + i];
+        }
+    }
+}
+
+// Utility function to compute the inverse using LU decomposition
+void LU_inverse(data_type* A, data_type* A_inv, int n) {
+    int P[n];  // Pivot array
+    lu_decomposition(A, P, n);  // Perform LU decomposition
+    lu_invert(A, A_inv, P, n);  // Invert using the LU factors
+}
 
 // Utility function implementations
 void gauss_inverse(data_type* A, data_type* A_inv, int n) {
@@ -306,6 +386,8 @@ int main() {
             Mat_F[i * STATE_SIZE + j] = A[i * STATE_SIZE + j];
         }
     }
+            printf("\nMat_F:\n");
+            print_matrix(Mat_F, STATE_SIZE, STATE_SIZE);
 
     for (int i = 0; i < STATE_SIZE; i++) {
         for (int j = 0; j < STATE_SIZE; j++) {
