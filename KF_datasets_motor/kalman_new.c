@@ -1,6 +1,8 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <cmath>
 typedef float data_type;
 
 #include "A_array.h"
@@ -15,7 +17,7 @@ typedef float data_type;
 
 #define STATE_SIZE 6  // Number of states n
 #define MEAS_SIZE 164  // Number of measurements m
-#define SAMPLES 100  // Number of measurements m
+#define SAMPLES 101  // Number of measurements m
 #define ERROR_THRESHOLD 0.02
 int tot_errors = 0;
 void matrix_multiply(data_type* A, data_type* B, data_type* C, int n, int m, int p);
@@ -91,11 +93,14 @@ void kalman_filter_new(data_type* vec_X, data_type* Mat_P, data_type* Mat_F, dat
     data_type F_P_FT_Q[STATE_SIZE * STATE_SIZE];
     matrix_add(F_P_FT, Mat_Q, F_P_FT_Q, STATE_SIZE, STATE_SIZE); // Pp = (A * P2) * A^T + Q
 
-    data_type H_times_F_P_FT_Q[MEAS_SIZE * STATE_SIZE];
-    matrix_multiply(Mat_H, F_P_FT_Q, H_times_F_P_FT_Q, MEAS_SIZE,   STATE_SIZE, STATE_SIZE); 
+    data_type F_P_FT_Q_times_HT[STATE_SIZE*MEAS_SIZE];
+    matrix_multiply(F_P_FT_Q, H_Transpose, F_P_FT_Q_times_HT, STATE_SIZE,   STATE_SIZE, MEAS_SIZE); 
+
+    /* data_type H_times_F_P_FT_Q[MEAS_SIZE * STATE_SIZE]; */
+    /* matrix_multiply(Mat_H, F_P_FT_Q, H_times_F_P_FT_Q, MEAS_SIZE,   STATE_SIZE, STATE_SIZE);  */
 
     data_type H_times_F_P_FT_Q_times_HT[MEAS_SIZE * MEAS_SIZE];
-    matrix_multiply(H_times_F_P_FT_Q, H_Transpose, H_times_F_P_FT_Q_times_HT, MEAS_SIZE,   STATE_SIZE, MEAS_SIZE); 
+    matrix_multiply(Mat_H, F_P_FT_Q_times_HT, H_times_F_P_FT_Q_times_HT, MEAS_SIZE,   STATE_SIZE, MEAS_SIZE); 
     matrix_add(H_times_F_P_FT_Q_times_HT, Mat_R, Mat_S, MEAS_SIZE, MEAS_SIZE); // Pp = (A * P2) * A^T + Q
 
     data_type S_inv[MEAS_SIZE * MEAS_SIZE];
@@ -128,8 +133,8 @@ void kalman_filter_new(data_type* vec_X, data_type* Mat_P, data_type* Mat_F, dat
 
     // data_type F_P_FT_Q[STATE_SIZE * STATE_SIZE];
     // data_type H_Transpose[STATE_SIZE * MEAS_SIZE];
-    data_type F_P_FT_Q_times_HT[STATE_SIZE*MEAS_SIZE];
-    matrix_multiply(F_P_FT_Q, H_Transpose, F_P_FT_Q_times_HT, STATE_SIZE,   STATE_SIZE, MEAS_SIZE); 
+    /* data_type F_P_FT_Q_times_HT[STATE_SIZE*MEAS_SIZE]; */
+    /* matrix_multiply(F_P_FT_Q, H_Transpose, F_P_FT_Q_times_HT, STATE_SIZE,   STATE_SIZE, MEAS_SIZE);  */
 
     // data_type H_Transpose[STATE_SIZE * MEAS_SIZE];
     // data_type S_inv[MEAS_SIZE * MEAS_SIZE];
@@ -161,6 +166,15 @@ void kalman_filter_new(data_type* vec_X, data_type* Mat_P, data_type* Mat_F, dat
 
     // data_type KtH[STATE_SIZE * STATE_SIZE];
     matrix_multiply(Mat_K, Mat_H, KtH, STATE_SIZE,   MEAS_SIZE, STATE_SIZE); 
+
+    data_type Mat_I_local[STATE_SIZE*STATE_SIZE];
+    for (int i = 0; i < STATE_SIZE; i++) 
+    {
+        for (int j = 0; j < STATE_SIZE; j++) 
+        {
+            Mat_I_local[i * STATE_SIZE + j] = (i == j) ? 1.0 : 0.0;
+        }
+    }
 
     data_type I_minus_KtH[STATE_SIZE * STATE_SIZE];
     matrix_subtract(Mat_I, KtH, I_minus_KtH, STATE_SIZE*STATE_SIZE); // P3 = Pp - (K * H * Pp)
@@ -468,11 +482,13 @@ int main() {
         for (int i = 0; i < STATE_SIZE; i++) 
             abs_diff += fabs(diff_vec[i]);
 
-        sqr_diff = abs_diff * abs_diff;
+        //sqr_diff = abs_diff * abs_diff;
+	sqr_diff = std::pow(abs_diff,2);
         sum_sqr_vec += sqr_diff;
+	abs_diff = 0.0;
 
     }
-    sum_sqr_vec = sum_sqr_vec/((STATE_SIZE-1)*STATE_SIZE);
+    sum_sqr_vec = sum_sqr_vec/((SAMPLES-1)*STATE_SIZE);
     printf("MSE: %e\n", sum_sqr_vec);
     // std::cout << "MSE is = \n" << sum_sqr_vec << std::endl;  
 
